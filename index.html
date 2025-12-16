@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <title>Finance Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fb;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    .card {
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.08);
+    }
+    .value {
+      font-size: 26px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+    table {
+      width: 100%;
+      background: white;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f0f2f7;
+      text-align: left;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>💳 Family Finance Dashboard</h1>
+
+<div class="grid">
+  <div class="card">
+    <div>Total Balance</div>
+    <div id="balance" class="value">₹0</div>
+  </div>
+  <div class="card">
+    <div>Total Credit</div>
+    <div id="credit" class="value">₹0</div>
+  </div>
+  <div class="card">
+    <div>Total Debit</div>
+    <div id="debit" class="value">₹0</div>
+  </div>
+  <div class="card">
+    <div>Transactions</div>
+    <div id="count" class="value">0</div>
+  </div>
+</div>
+
+<canvas id="chart" height="100"></canvas>
+
+<h2>Transactions</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Bank</th>
+      <th>Type</th>
+      <th>Amount</th>
+      <th>Subject</th>
+    </tr>
+  </thead>
+  <tbody id="txBody"></tbody>
+</table>
+
+<script>
+function loadDashboard() {
+  google.script.run.withSuccessHandler(renderStats).getDashboardStats();
+  google.script.run.withSuccessHandler(renderTable).getFinanceData();
+}
+
+function renderStats(data) {
+  document.getElementById("balance").innerText = "₹" + data.balance.toFixed(2);
+  document.getElementById("credit").innerText  = "₹" + data.totalCredit.toFixed(2);
+  document.getElementById("debit").innerText   = "₹" + data.totalDebit.toFixed(2);
+  document.getElementById("count").innerText   = data.transactions;
+
+  new Chart(document.getElementById("chart"), {
+    type: "bar",
+    data: {
+      labels: ["Credit", "Debit"],
+      datasets: [{
+        data: [data.totalCredit, data.totalDebit]
+      }]
+    }
+  });
+}
+
+function renderTable(rows) {
+  const body = document.getElementById("txBody");
+  body.innerHTML = "";
+
+  rows.slice(-50).reverse().forEach(r => {
+    body.innerHTML += `
+      <tr>
+        <td>${new Date(r[0]).toLocaleDateString()}</td>
+        <td>${r[1]}</td>
+        <td>${r[4]}</td>
+        <td>₹${r[5]}</td>
+        <td>${r[3]}</td>
+      </tr>`;
+  });
+}
+
+loadDashboard();
+setInterval(loadDashboard, 60000);
+</script>
+
+</body>
+</html>
